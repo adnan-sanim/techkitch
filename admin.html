@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Portal — TechKitch Store Manager</title>
+  <meta name="description" content="Manage TechKitch products, upload images, set prices and descriptions, track customer orders, and configure store settings." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body class="admin-body">
+
+  <!-- Admin Header -->
+  <header class="admin-header">
+    <div class="admin-header__inner">
+      <a href="index.html" class="admin-brand">
+        <span class="admin-logo"><span class="tk-tech">Tech</span><span class="tk-kitch">Kitch</span></span>
+        <span class="admin-badge">
+          <span class="admin-badge__dot"></span>
+          Admin Portal
+        </span>
+      </a>
+
+      <div class="admin-header__actions">
+        <a href="index.html" class="btn-admin btn-admin--outline btn-admin--sm" title="View Store">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          <span class="btn-text">Store</span>
+        </a>
+        <button type="button" id="btnOpenAddProduct" class="btn-admin btn-admin--primary btn-admin--sm" title="Add New Product">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span class="btn-text">Add Product</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="admin-container">
+    
+    <!-- Top KPI Stats Cards -->
+    <section class="admin-stats">
+      <div class="stat-card">
+        <div class="stat-card__head">
+          <span>Catalog Products</span>
+          <div class="stat-card__icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          </div>
+        </div>
+        <div class="stat-card__value" id="kpiTotalProducts">0</div>
+        <div class="stat-card__sub" id="kpiStockStatus">Loading inventory...</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-card__head">
+          <span>Categories</span>
+          <div class="stat-card__icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          </div>
+        </div>
+        <div class="stat-card__value" id="kpiCategories">0</div>
+        <div class="stat-card__sub">Headphones, Fans, Gear</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-card__head">
+          <span>Customer Orders</span>
+          <div class="stat-card__icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          </div>
+        </div>
+        <div class="stat-card__value" id="kpiTotalOrders">0</div>
+        <div class="stat-card__sub">Orders placed on checkout</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-card__head">
+          <span>Total Sales Volume</span>
+          <div class="stat-card__icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+        </div>
+        <div class="stat-card__value" id="kpiTotalRevenue">৳0.00</div>
+        <div class="stat-card__sub">Gross order volume</div>
+      </div>
+    </section>
+
+    <!-- Tab Navigation -->
+    <nav class="admin-tabs" aria-label="Admin Navigation Tabs">
+      <button class="tab-btn tab-btn--active" data-tab="products">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        Products Catalog
+        <span class="tab-btn__count" id="tabProductsCount">0</span>
+      </button>
+
+      <button class="tab-btn" data-tab="hero">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        Hero Banner Slider
+        <span class="tab-btn__count" id="tabHeroCount">6</span>
+      </button>
+
+      <button class="tab-btn" data-tab="orders">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Customer Orders
+        <span class="tab-btn__count" id="tabOrdersCount">0</span>
+      </button>
+
+      <button class="tab-btn" data-tab="settings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Store Settings & Backup
+      </button>
+    </nav>
+
+    <!-- TAB 1: PRODUCTS MANAGEMENT -->
+    <div id="panel-products" class="tab-panel tab-panel--active">
+      <!-- Filter and Action Bar -->
+      <div class="panel-action-bar">
+        <div class="search-filter-group">
+          <div class="search-input-wrapper">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="productSearchInput" class="admin-input" placeholder="Search products by title, description or category..." />
+          </div>
+
+          <select id="productCategoryFilter" class="admin-select">
+            <option value="All">All Categories</option>
+          </select>
+
+          <select id="productStockFilter" class="admin-select">
+            <option value="All">All Stock Levels</option>
+            <option value="in-stock">In Stock Only</option>
+            <option value="out-of-stock">Out of Stock Only</option>
+          </select>
+        </div>
+
+        <button type="button" class="btn-admin btn-admin--primary" onclick="document.getElementById('btnOpenAddProduct').click()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Product
+        </button>
+      </div>
+
+      <!-- Products Table -->
+      <div class="admin-table-wrapper">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th style="width: 38%;">Product Title & Image</th>
+              <th style="width: 14%;">Category</th>
+              <th style="width: 14%;">Price</th>
+              <th style="width: 14%;">Stock Status</th>
+              <th style="width: 10%;">Badge</th>
+              <th style="width: 10%; text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="productsTableBody">
+            <!-- Rendered by admin.js -->
+          </tbody>
+        </table>
+
+        <div id="productsEmptyState" class="admin-empty-state" style="display: none;">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <h3>No products match your search</h3>
+          <p>Try adjusting your search keywords or category filters, or add a new product to your catalog.</p>
+          <button type="button" id="btnEmptyAddProduct" class="btn-admin btn-admin--primary">Add New Product</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: HERO BANNER & SLIDER -->
+    <div id="panel-hero" class="tab-panel">
+      <div class="panel-action-bar">
+        <div>
+          <h3 style="color:#fff; font-size: 1.15rem; margin-bottom: 4px;">Home Hero Banner & Image Slider</h3>
+          <p style="color:var(--admin-muted); font-size: 0.85rem;">Upload new slider images directly from your device (no link needed), reorder slides, or update the limited-time discount tag.</p>
+        </div>
+
+        <div style="display:flex; gap:10px;">
+          <button type="button" id="btnResetHeroSlides" class="btn-admin btn-admin--outline btn-admin--sm">
+            Reset Default Slides
+          </button>
+          <button type="button" id="btnSaveHeroSlider" class="btn-admin btn-admin--primary btn-admin--sm">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Save Slider Changes
+          </button>
+        </div>
+      </div>
+
+      <div class="hero-manager-layout">
+        <!-- Live Preview Simulation -->
+        <div>
+          <h4 style="color:#fff; font-size: 0.95rem; margin-bottom: 10px; display:flex; align-items:center; gap:8px;">
+            <span>Live Home Preview</span>
+            <span class="admin-badge" style="font-size:0.65rem; padding: 2px 6px;">Live Rotator</span>
+          </h4>
+
+          <div class="admin-hero-preview">
+            <div class="hero-slider" id="adminHeroSliderPreview">
+              <!-- Dynamically populated and animated by admin.js -->
+            </div>
+            <div class="receipt-corner" id="adminHeroCornerPreview">
+              <span id="previewCornerTitle">10% Off</span>
+              <span id="previewCornerSub">Limited Time Offer</span>
+            </div>
+          </div>
+          <p style="font-size:0.75rem; color:var(--admin-muted); margin-top:10px; text-align:center;">
+            This matches the exact visual display on your homepage.
+          </p>
+
+          <!-- Corner Tag Edit Card -->
+          <div style="background:var(--admin-surface); border:1px solid var(--admin-border); border-radius:var(--admin-radius-md); padding:16px; margin-top:16px;">
+            <h5 style="color:#fff; font-size:0.88rem; margin-bottom:12px;">Offer Tag Badge (Corner)</h5>
+            <div class="form-group" style="margin-bottom:10px;">
+              <label class="form-label" for="heroBadgeTitleInput" style="font-size:0.75rem;">Tag Title</label>
+              <input type="text" id="heroBadgeTitleInput" class="admin-input admin-input--no-icon" placeholder="e.g. 10% Off" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="heroBadgeSubInput" style="font-size:0.75rem;">Tag Subtitle</label>
+              <input type="text" id="heroBadgeSubInput" class="admin-input admin-input--no-icon" placeholder="e.g. Limited Time Offer" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Slides List & Direct Upload -->
+        <div style="display:flex; flex-direction:column; gap:20px;">
+          <!-- Direct File Upload Zone (Link chara upload) -->
+          <div style="background:var(--admin-surface); border:1px solid var(--admin-border); border-radius:var(--admin-radius-md); padding:20px;">
+            <h4 style="color:#fff; font-size:1rem; margin-bottom:4px;">Upload Slide Images (Direct From Device)</h4>
+            <p style="color:var(--admin-muted); font-size:0.82rem; margin-bottom:14px;">Select or drop product photos directly from your phone/computer without needing any image link. Auto-compressed for instantaneous rendering.</p>
+
+            <div class="image-upload-zone" id="heroSlideUploadZone">
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <h4>Drop slide images here or click to browse</h4>
+              <p>Supports PNG, JPG, WEBP. You can select multiple images at once.</p>
+              <input type="file" id="heroSlideFileInput" multiple accept="image/*" />
+            </div>
+
+            <!-- Optional Image URL Input -->
+            <div style="margin-top:14px; padding-top:14px; border-top:1px dashed var(--admin-border); display:flex; gap:8px;">
+              <input type="url" id="heroSlideUrlInput" class="admin-input admin-input--no-icon" placeholder="Or paste an image web link (URL)..." style="font-size:0.82rem;" />
+              <button type="button" id="btnAddHeroUrl" class="btn-admin btn-admin--outline btn-admin--sm">Add URL</button>
+            </div>
+          </div>
+
+          <!-- Active Slides List -->
+          <div style="background:var(--admin-surface); border:1px solid var(--admin-border); border-radius:var(--admin-radius-md); padding:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+              <h4 style="color:#fff; font-size:1rem;">Active Slides (<span id="heroSlidesListCount">0</span>)</h4>
+              <span style="font-size:0.75rem; color:var(--admin-muted);">Order from top to bottom</span>
+            </div>
+
+            <div id="heroSlidesList" style="display:flex; flex-direction:column; gap:10px;">
+              <!-- Populated by admin.js -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB 3: CUSTOMER ORDERS -->
+    <div id="panel-orders" class="tab-panel">
+      <div class="panel-action-bar">
+        <div class="search-filter-group">
+          <label style="color: var(--admin-muted); font-size: 0.82rem; font-weight: 600;">Status Filter:</label>
+          <select id="orderStatusFilter" class="admin-select">
+            <option value="All">All Orders</option>
+            <option value="Processing">Processing</option>
+            <option value="Confirmed">Confirmed</option>
+            <option value="Shipped">Shipped</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </div>
+
+        <button type="button" id="btnGenerateSampleOrder" class="btn-admin btn-admin--outline btn-admin--sm" title="Simulate a test order placed by a customer">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          + Generate Test Order
+        </button>
+      </div>
+
+      <div class="admin-table-wrapper">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th style="width: 14%;">Order ID & Date</th>
+              <th style="width: 18%;">Customer</th>
+              <th style="width: 22%;">Address</th>
+              <th style="width: 10%;">Items</th>
+              <th style="width: 14%;">Total</th>
+              <th style="width: 12%;">Order Status</th>
+              <th style="width: 10%; text-align: right;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="ordersTableBody">
+            <!-- Rendered by admin.js -->
+          </tbody>
+        </table>
+
+        <div id="ordersEmptyState" class="admin-empty-state" style="display: none;">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          <h3>No customer orders recorded yet</h3>
+          <p>Orders placed by buyers on your checkout page will automatically appear here with their contact details, address, and purchased items.</p>
+          <button type="button" onclick="document.getElementById('btnGenerateSampleOrder').click()" class="btn-admin btn-admin--outline">
+            Create Sample Order to Test
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: STORE SETTINGS & DATA -->
+    <div id="panel-settings" class="tab-panel">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
+        
+        <!-- Store Information -->
+        <div class="stat-card" style="padding: 24px;">
+          <h3 style="color:#fff; font-size: 1.15rem; margin-bottom: 6px;">Store Configuration</h3>
+          <p style="color:var(--admin-muted); font-size: 0.85rem; margin-bottom: 20px;">Control store currency, delivery fees, and contact info.</p>
+
+          <form id="settingsForm" style="display:flex; flex-direction:column; gap:16px;">
+            <div class="form-group">
+              <label class="form-label" for="settingStoreName">Store Name</label>
+              <input type="text" id="settingStoreName" class="form-input" required />
+            </div>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label" for="settingCurrency">Currency Symbol</label>
+                <input type="text" id="settingCurrency" class="form-input" placeholder="৳" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="settingShippingFee">Standard Shipping Fee (৳)</label>
+                <input type="number" id="settingShippingFee" class="form-input" min="0" required />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="settingFreeShipping">Free Shipping Threshold (৳)</label>
+              <input type="number" id="settingFreeShipping" class="form-input" min="0" required />
+              <span class="form-hint">Orders above this amount get free shipping automatically.</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="settingMessengerId">Facebook Messenger Page ID</label>
+              <input type="text" id="settingMessengerId" class="form-input" placeholder="e.g. 61591512496468" />
+              <span class="form-hint">Used for direct Messenger order notifications at checkout.</span>
+            </div>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label" for="settingPhone">Support Phone / Hotline</label>
+                <input type="text" id="settingPhone" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="settingEmail">Support Email</label>
+                <input type="email" id="settingEmail" class="form-input" />
+              </div>
+            </div>
+
+            <div style="margin-top: 8px;">
+              <button type="submit" class="btn-admin btn-admin--primary">Save Store Settings</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Data Backup & Reset -->
+        <div class="stat-card" style="padding: 24px;">
+          <h3 style="color:#fff; font-size: 1.15rem; margin-bottom: 6px;">Backup & Data Management</h3>
+          <p style="color:var(--admin-muted); font-size: 0.85rem; margin-bottom: 20px;">Export your catalog and orders, import backups, or restore defaults.</p>
+
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="background: var(--admin-surface-2); padding: 16px; border-radius: 8px; border: 1px solid var(--admin-border);">
+              <h4 style="color: #fff; margin-bottom: 4px; font-size: 0.95rem;">Export Complete Backup</h4>
+              <p style="color: var(--admin-muted); font-size: 0.8rem; margin-bottom: 12px;">Download all your custom products, photos, orders, and store settings as a single JSON file.</p>
+              <button type="button" id="btnExportData" class="btn-admin btn-admin--outline btn-admin--sm">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Download Backup (JSON)
+              </button>
+            </div>
+
+            <div style="background: var(--admin-surface-2); padding: 16px; border-radius: 8px; border: 1px solid var(--admin-border);">
+              <h4 style="color: #fff; margin-bottom: 4px; font-size: 0.95rem;">Restore from Backup</h4>
+              <p style="color: var(--admin-muted); font-size: 0.8rem; margin-bottom: 12px;">Upload a previously exported JSON backup file to restore products and orders.</p>
+              <label class="btn-admin btn-admin--outline btn-admin--sm" style="display: inline-flex; cursor: pointer;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Select Backup File
+                <input type="file" id="importDataInput" accept=".json,application/json" style="display: none;" />
+              </label>
+            </div>
+
+            <div style="background: rgba(239, 68, 68, 0.06); padding: 16px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2);">
+              <h4 style="color: #ef4444; margin-bottom: 4px; font-size: 0.95rem;">Factory Reset Catalog</h4>
+              <p style="color: var(--admin-muted); font-size: 0.8rem; margin-bottom: 12px;">Reset all products back to the original default 8 tech products.</p>
+              <button type="button" id="btnResetFactory" class="btn-admin btn-admin--danger btn-admin--sm">
+                Reset Products to Default
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ADD / EDIT PRODUCT MODAL -->
+  <div id="productModal" class="admin-modal">
+    <div class="admin-modal__backdrop js-close-modal"></div>
+    <div class="admin-modal__dialog">
+      <div class="admin-modal__header">
+        <h3 id="productModalTitle" class="admin-modal__title">Add New Product</h3>
+        <button type="button" class="admin-modal__close js-close-modal" aria-label="Close modal">✕</button>
+      </div>
+
+      <form id="productForm" style="display: contents;">
+        <div class="admin-modal__body">
+          <div class="form-grid">
+            
+            <!-- Title -->
+            <div class="form-group form-grid--full">
+              <label class="form-label" for="productNameInput">Product Title / Name <span class="req">*</span></label>
+              <input type="text" id="productNameInput" class="form-input" placeholder="e.g. Hoco W55 Plus Extra 170H ANC Headphone" required />
+            </div>
+
+            <!-- Category -->
+            <div class="form-group">
+              <label class="form-label" for="productCategoryInput">Category <span class="req">*</span></label>
+              <select id="productCategoryInput" class="form-select">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+
+            <!-- Custom Category (hidden until selected) -->
+            <div class="form-group" id="customCategoryGroup" style="display: none;">
+              <label class="form-label" for="customCategoryInput">New Category Name <span class="req">*</span></label>
+              <input type="text" id="customCategoryInput" class="form-input" placeholder="e.g. Smart Watch" />
+            </div>
+
+            <!-- Badge -->
+            <div class="form-group">
+              <label class="form-label" for="productBadgeInput">Badge Tag (Optional)</label>
+              <input type="text" id="productBadgeInput" class="form-input" placeholder="e.g. Best Seller, New, Sale, Combo" />
+            </div>
+
+            <!-- Selling Price -->
+            <div class="form-group">
+              <label class="form-label" for="productPriceInput">Selling Price (৳) <span class="req">*</span></label>
+              <input type="number" id="productPriceInput" class="form-input" placeholder="1890" step="0.01" min="0" required />
+            </div>
+
+            <!-- Old Price / Discount -->
+            <div class="form-group">
+              <label class="form-label" for="productOldPriceInput">Old / Regular Price (৳) (Optional)</label>
+              <input type="number" id="productOldPriceInput" class="form-input" placeholder="1980" step="0.01" min="0" />
+              <span class="form-hint">Shows strike-through price and discount percentage</span>
+            </div>
+
+            <!-- Stock -->
+            <div class="form-group">
+              <label class="form-label" for="productStockInput">Stock Quantity <span class="req">*</span></label>
+              <input type="number" id="productStockInput" class="form-input" placeholder="10" min="0" required />
+              <span class="form-hint">Set to 0 to mark as "Out of stock"</span>
+            </div>
+
+            <!-- ==============================================
+                 DIRECT IMAGE UPLOAD (Without Link!)
+                 ============================================== -->
+            <div class="form-group form-grid--full" style="margin-top: 8px;">
+              <label class="form-label">
+                Product Images (Upload Directly from Device) <span class="req">*</span>
+              </label>
+
+              <!-- Drag & Drop Zone -->
+              <div class="image-upload-zone" id="productImageUploadZone">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <h4>Choose or drag images here</h4>
+                <p>Upload photos directly from your phone, laptop, or camera (no link required). Auto-compressed for fast loading.</p>
+                <input type="file" id="productFileInput" multiple accept="image/*" />
+              </div>
+
+              <!-- Uploaded Thumbnails Gallery -->
+              <div id="productImagesPreview" class="image-preview-grid">
+                <!-- Populated via admin.js -->
+              </div>
+
+              <!-- Optional Image URL fallback -->
+              <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--admin-border);">
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <input type="url" id="productImageUrlInput" class="form-input" placeholder="Or paste an image web link (URL) if you have one..." style="font-size: 0.8rem; padding: 8px 12px;" />
+                  <button type="button" id="btnAddImageUrl" class="btn-admin btn-admin--outline btn-admin--sm">Add URL</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Description -->
+            <div class="form-group form-grid--full" style="margin-top: 8px;">
+              <label class="form-label" for="productDescriptionInput">Product Description & Specs <span class="req">*</span></label>
+              <textarea id="productDescriptionInput" class="form-textarea" placeholder="Detail specifications, features, warranty, and battery life:&#10;&#10;Battery: 170 Hours total playback&#10;Noise Canceling: Active ANC -28dB&#10;Connectivity: Bluetooth 5.4 + AUX" rows="6"></textarea>
+              <span class="form-hint">Line breaks and bullet points will be preserved in the store product view.</span>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="admin-modal__footer">
+          <button type="button" class="btn-admin btn-admin--outline js-close-modal">Cancel</button>
+          <button type="submit" class="btn-admin btn-admin--primary">Save Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ORDER INVOICE MODAL -->
+  <div id="invoiceModal" class="admin-modal">
+    <div class="admin-modal__backdrop js-close-modal"></div>
+    <div class="admin-modal__dialog" style="max-width: 650px;">
+      <div class="admin-modal__header">
+        <h3 class="admin-modal__title">Customer Invoice Details</h3>
+        <button type="button" class="admin-modal__close js-close-modal" aria-label="Close modal">✕</button>
+      </div>
+      <div class="admin-modal__body" id="invoiceModalContent">
+        <!-- Rendered by admin.js -->
+      </div>
+      <div class="admin-modal__footer">
+        <button type="button" class="btn-admin btn-admin--outline js-close-modal">Close</button>
+        <button type="button" id="btnPrintInvoice" class="btn-admin btn-admin--primary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Print Invoice
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="adminToastContainer" class="admin-toast-container"></div>
+
+  <!-- Required Scripts -->
+  <script src="products.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

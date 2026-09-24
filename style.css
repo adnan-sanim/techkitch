@@ -248,6 +248,21 @@ h1, h2, h3, h4 {
   background: rgba(255, 255, 255, 0.08);
 }
 
+.nav a.nav__admin-link {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: 4px;
+  padding-top: 10px;
+  color: #ff5500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav a.nav__admin-link:hover {
+  background: rgba(255, 85, 0, 0.12);
+  color: #ff7733;
+}
+
 .icon-btn {
   position: relative;
   display: inline-flex;

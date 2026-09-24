@@ -21,7 +21,7 @@ function saveCart(cart) {
 }
 
 function findProduct(id) {
-  return PRODUCTS.find((p) => p.id === id);
+  return PRODUCTS.find((p) => Number(p.id) === Number(id) || String(p.id) === String(id));
 }
 
 function addToCart(productId, qty = 1) {

@@ -22,6 +22,7 @@ export default defineConfig(() => {
           privacy: path.resolve(__dirname, 'privacy-policy.html'),
           returns: path.resolve(__dirname, 'returns-warranty.html'),
           terms: path.resolve(__dirname, 'terms.html'),
+          admin: path.resolve(__dirname, 'admin.html'),
         },
       },
     },

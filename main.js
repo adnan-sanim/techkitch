@@ -277,18 +277,50 @@ function initMobileNav() {
   // Navigation handling is managed centrally by nav.js
 }
 
+let heroSliderInterval = null;
+
 function initHeroSlider() {
-  const slides = document.querySelectorAll('.hero-slider .slide');
-  if (slides.length === 0) return;
+  const slider = document.querySelector('.hero-slider');
+  if (!slider) return;
+
+  const slidesData = window.loadHeroSlides ? window.loadHeroSlides() : [];
+  if (slidesData && slidesData.length > 0) {
+    slider.innerHTML = slidesData.map((s, idx) => `
+      <img src="${s.image}" alt="${s.alt || 'Tech Product'}" class="slide ${idx === 0 ? 'active' : ''}" />
+    `).join("");
+  }
+
+  // Update receipt corner banner text if defined in settings
+  const corner = document.querySelector('.receipt-corner');
+  if (corner && window.STORE_SETTINGS) {
+    const bTitle = window.STORE_SETTINGS.heroBadgeTitle || "10% Off";
+    const bSub = window.STORE_SETTINGS.heroBadgeSubtitle || "Limited Time Offer";
+    corner.innerHTML = `<span>${bTitle}</span><span>${bSub}</span>`;
+  }
+
+  const slides = slider.querySelectorAll('.slide');
+  if (slides.length <= 1) return;
 
   let currentSlide = 0;
+  if (heroSliderInterval) {
+    clearInterval(heroSliderInterval);
+  }
 
-  setInterval(() => {
+  heroSliderInterval = setInterval(() => {
     slides[currentSlide].classList.remove('active');
     currentSlide = (currentSlide + 1) % slides.length;
     slides[currentSlide].classList.add('active');
   }, 2400);
 }
+
+// React to hero slider updates in real-time
+window.addEventListener("techkitch:hero-updated", () => {
+  initHeroSlider();
+});
+
+window.addEventListener("techkitch:settings-updated", () => {
+  initHeroSlider();
+});
 
 document.addEventListener("DOMContentLoaded", () => {
   if (document.querySelector(".js-product-grid")) {

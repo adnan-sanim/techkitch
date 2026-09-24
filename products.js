@@ -1,8 +1,9 @@
 /* ============================================================
-   TECHKITCH — PRODUCT CATALOG
+   TECHKITCH — PRODUCT CATALOG & STORAGE MANAGER
+   Supports client-side admin CRUD, image uploads, & persistence.
    ============================================================ */
 
-const PRODUCTS = [
+const DEFAULT_PRODUCTS = [
   {
     id: 1,
     name: "Hoco W55 Plus Extra 170H Long Usage ANC Headphone",
@@ -63,26 +64,27 @@ Warranty: 7-day replacement warranty.`,
       "https://i.postimg.cc/B62YPk7p/Screenshot-20260712-191814-Chrome.jpg"
     ],
     description: `Product name: Handheld Fan.
-    Model: F01.
-    Color: Green.
-    Battery type/energy: Lithium battery/2000mAh 3.7V 4.44Wh.
-    Rated voltage: 5V=.
-    Rated current: 1A.
-    Rated input power: 5W.
-    Working time: About 1.2 – 4.2h.
-    Charging time: About 2.2h.
-    Product size: About 61x161x48.9mm.
-    Product weight: About 125g.
-    Product material: PC+ABS (V0).
-    Support charging and use at the same time.
-    Type-C fast charging interface.
-    Five levels of wind speed control.
-    Low noise.
-    
-    NOTE: This is a Xiaomi Ecological product and there won’t be any Xiaomi Logo on it. As a sub-brand, there will be a SOLOVE or AISOLOVE logo.`,
+Model: F01.
+Color: Green.
+Battery type/energy: Lithium battery/2000mAh 3.7V 4.44Wh.
+Rated voltage: 5V=.
+Rated current: 1A.
+Rated input power: 5W.
+Working time: About 1.2 – 4.2h.
+Charging time: About 2.2h.
+Product size: About 61x161x48.9mm.
+Product weight: About 125g.
+Product material: PC+ABS (V0).
+Support charging and use at the same time.
+Type-C fast charging interface.
+Five levels of wind speed control.
+Low noise.
+
+NOTE: This is a Xiaomi Ecological product and there won’t be any Xiaomi Logo on it. As a sub-brand, there will be a SOLOVE or AISOLOVE logo.`,
     stock: 8,
     badge: "New"
   },
+
   {
     id: 4,
     name: "JYSUPER JY-2320 Portable Handheld Mini Fan with Integrated LED light",
@@ -94,25 +96,26 @@ Warranty: 7-day replacement warranty.`,
       "https://i.postimg.cc/4NhdHTzp/Screenshot-20260712-200417-Chrome.jpg"
     ],
     description: `Product Type: Portable Handheld Mini Fan with LED Light.
-    Model: JYSUPER JY-2320.
-    Material: High-Quality ABS Plastic.
-    Dimensions (H x W x D): 18.5 cm x 9.5 cm x 4.5 cm.
-    Weight: 180 grams (approx.).
-    Battery Type: Rechargeable Lithium-ion.
-    Battery Capacity: 1500 mAh.
-    Input Voltage: DC 5V / 1A.
-    Charging Port: Micro USB.
-    Charging Time: Approximately 3 hours.
-    Usage Time: 2-5 hours (depending on fan speed and LED usage).
-    Fan Speeds: No adjustable speeds.
-    LED Light: Integrated single-mode LED.
-    Color Options: White.
-    Noise Level: Less than 40dB.
-    Power Output: 2.5W.
-    Included Accessories: USB Charging Cable.`,
+Model: JYSUPER JY-2320.
+Material: High-Quality ABS Plastic.
+Dimensions (H x W x D): 18.5 cm x 9.5 cm x 4.5 cm.
+Weight: 180 grams (approx.).
+Battery Type: Rechargeable Lithium-ion.
+Battery Capacity: 1500 mAh.
+Input Voltage: DC 5V / 1A.
+Charging Port: Micro USB.
+Charging Time: Approximately 3 hours.
+Usage Time: 2-5 hours (depending on fan speed and LED usage).
+Fan Speeds: No adjustable speeds.
+LED Light: Integrated single-mode LED.
+Color Options: White.
+Noise Level: Less than 40dB.
+Power Output: 2.5W.
+Included Accessories: USB Charging Cable.`,
     stock: 15,
     badge: "Budget"
   },
+
   {
     id: 5,
     name: "GearUP Air Cooler Fan With Mist Flow – White Color",
@@ -125,24 +128,25 @@ Warranty: 7-day replacement warranty.`,
       "https://i.postimg.cc/y8YZddvf/Screenshot-20260713-092812-Chrome.jpg"
     ],
     description: `Product parameters:
-    Rated voltage: 5V.
-    Rated current: 2A.
-    Output power: 10W.
-    Charging interface: TYPE – C.
-    Water tank capacity: 600ML.
-    Atomization amount: 45ml/H~225ml/H.
-    Gear: Three speed settings.
-    21x9x26 cm.
-    USB cable length: 1200mm.
-    1) Three wind speed options.
-    2) Spray fan.
-    3) Fan increases water and ice water to accelerate cooling speed.
-    4) 240 ° wide angle adjustment air outlet.
-    5) Adjustable angle up and down.
-    6) Spray: five spray ports.`,
+Rated voltage: 5V.
+Rated current: 2A.
+Output power: 10W.
+Charging interface: TYPE – C.
+Water tank capacity: 600ML.
+Atomization amount: 45ml/H~225ml/H.
+Gear: Three speed settings.
+21x9x26 cm.
+USB cable length: 1200mm.
+1) Three wind speed options.
+2) Spray fan.
+3) Fan increases water and ice water to accelerate cooling speed.
+4) 240 ° wide angle adjustment air outlet.
+5) Adjustable angle up and down.
+6) Spray: five spray ports.`,
     stock: 24,
     badge: "39% Discount"
   },
+
   {
     id: 6,
     name: "B22 to E27 LED Lamp Holder with Wireless Remote & Timer",
@@ -156,18 +160,18 @@ Warranty: 7-day replacement warranty.`,
       "https://i.postimg.cc/Gh3MfWyv/Screenshot-20260713-210014-Chrome.jpg"
     ],
     description: `Product parameters:
-    Wireless IR Remote Control (5–8m range).
-    Built-in timer: 5 / 15 / 30 / 60 / 120 minutes.
-    Supports E27 bulbs up to 60W.
-    Converts B22 socket to E27 bulb holder.
-    Plug & Play installation — no tools needed.
-    Includes CR2025 battery-powered remote.
-    
-    How It Works:
-    Screw the adapter into your B22 socket.
-    Attach any compatible E27 bulb.
-    Use the remote to turn on/off or set timer.
-    Enjoy wireless control instantly.`,
+Wireless IR Remote Control (5–8m range).
+Built-in timer: 5 / 15 / 30 / 60 / 120 minutes.
+Supports E27 bulbs up to 60W.
+Converts B22 socket to E27 bulb holder.
+Plug & Play installation — no tools needed.
+Includes CR2025 battery-powered remote.
+
+How It Works:
+Screw the adapter into your B22 socket.
+Attach any compatible E27 bulb.
+Use the remote to turn on/off or set timer.
+Enjoy wireless control instantly.`,
     stock: 24,
     badge: "Smart Gadget"
   },
@@ -518,18 +522,224 @@ Eco-Friendly and Space-Saving.`,
    
 ];
 
-/* Store settings */
-const STORE_SETTINGS = {
+const DEFAULT_STORE_SETTINGS = {
   storeName: "TechKitch",
   currencySymbol: "৳",
   freeShippingThreshold: 2000,
   shippingFee: 150,
-  taxRate: 0.00
+  taxRate: 0.00,
+  messengerPageId: "61591512496468",
+  supportPhone: "+880 1700-000000",
+  supportEmail: "support@techkitch.com",
+  heroBadgeTitle: "10% Off",
+  heroBadgeSubtitle: "Limited Time Offer"
 };
 
-// Global safety fallback to set primary image
-PRODUCTS.forEach(product => {
-  if (product.images && product.images.length > 0) {
-    product.image = product.images[0];
+const DEFAULT_HERO_SLIDES = [
+  {
+    image: "https://i.imgur.com/TwsE0MX.png",
+    alt: "Keyboard"
+  },
+  {
+    image: "https://i.postimg.cc/JhrB7Pzz/Screenshot-(305).png",
+    alt: "Hoco White Headphone"
+  },
+  {
+    image: "https://i.postimg.cc/FKGGhT0R/Screenshot-(316).png",
+    alt: "Gaming Head Phone"
+  },
+  {
+    image: "https://i.postimg.cc/Bvr764gR/Screenshot-20260712-191830-Chrome.jpg",
+    alt: "Turbo Fan"
+  },
+  {
+    image: "https://i.postimg.cc/yN6Y3YgL/Screenshot-20260713-205355-Chrome.jpg",
+    alt: "Lamp Holder"
+  },
+  {
+    image: "https://i.imgur.com/xoAhwSB.png",
+    alt: "Lamp Combo"
   }
-});
+];
+
+const PRODUCTS_STORAGE_KEY = "techkitch_products_catalog_v2";
+const SETTINGS_STORAGE_KEY = "techkitch_store_settings_v2";
+const HERO_SLIDES_STORAGE_KEY = "techkitch_hero_slides_v1";
+
+function loadHeroSlides() {
+  try {
+    const raw = localStorage.getItem(HERO_SLIDES_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.filter(s => s && s.image);
+      }
+    }
+  } catch (e) {
+    console.warn("Failed to load hero slides:", e);
+  }
+  return [...DEFAULT_HERO_SLIDES];
+}
+
+function saveHeroSlides(slides) {
+  const clean = (Array.isArray(slides) ? slides : []).filter(s => s && s.image);
+  localStorage.setItem(HERO_SLIDES_STORAGE_KEY, JSON.stringify(clean));
+  window.dispatchEvent(new CustomEvent("techkitch:hero-updated", { detail: clean }));
+  return clean;
+}
+
+function resetHeroSlides() {
+  localStorage.setItem(HERO_SLIDES_STORAGE_KEY, JSON.stringify(DEFAULT_HERO_SLIDES));
+  window.dispatchEvent(new CustomEvent("techkitch:hero-updated", { detail: DEFAULT_HERO_SLIDES }));
+  return [...DEFAULT_HERO_SLIDES];
+}
+
+function normalizeProduct(p) {
+  if (!p) return null;
+  const prod = { ...p };
+  prod.id = Number(prod.id) || Date.now();
+  prod.name = (prod.name || "Untitled Product").trim();
+  prod.category = (prod.category || "General").trim();
+  prod.price = Number(prod.price) || 0;
+  if (prod.oldPrice !== undefined && prod.oldPrice !== null && prod.oldPrice !== "") {
+    prod.oldPrice = Number(prod.oldPrice);
+    if (isNaN(prod.oldPrice) || prod.oldPrice <= 0) delete prod.oldPrice;
+  } else {
+    delete prod.oldPrice;
+  }
+  prod.stock = prod.stock !== undefined && prod.stock !== null ? Number(prod.stock) : 10;
+  if (isNaN(prod.stock) || prod.stock < 0) prod.stock = 0;
+  prod.badge = prod.badge ? String(prod.badge).trim() : "";
+  prod.description = prod.description ? String(prod.description) : "";
+
+  // Normalize images array
+  if (!Array.isArray(prod.images)) {
+    prod.images = prod.image ? [prod.image] : [];
+  }
+  prod.images = prod.images.filter(img => typeof img === "string" && img.trim().length > 0);
+  if (prod.images.length === 0) {
+    prod.images = ["https://placehold.co/600x600/1e1e1e/737373?text=TechKitch"];
+  }
+  prod.image = prod.images[0];
+  return prod;
+}
+
+function loadProducts() {
+  try {
+    const raw = localStorage.getItem(PRODUCTS_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map(normalizeProduct).filter(Boolean);
+      }
+    }
+  } catch (err) {
+    console.warn("Using default catalog. Storage read warning:", err);
+  }
+  const initial = DEFAULT_PRODUCTS.map(normalizeProduct);
+  try {
+    localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(initial));
+  } catch (e) {
+    // Ignore quota warnings on initial setup
+  }
+  return initial;
+}
+
+function saveStoredProducts(list) {
+  const normalized = list.map(normalizeProduct).filter(Boolean);
+  try {
+    localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(normalized));
+  } catch (e) {
+    console.error("Storage full or write error:", e);
+    throw e;
+  }
+  PRODUCTS.length = 0;
+  normalized.forEach(p => PRODUCTS.push(p));
+  window.dispatchEvent(new CustomEvent("techkitch:products-updated", { detail: normalized }));
+  return normalized;
+}
+
+function resetStoredProducts() {
+  const initial = DEFAULT_PRODUCTS.map(normalizeProduct);
+  localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(initial));
+  PRODUCTS.length = 0;
+  initial.forEach(p => PRODUCTS.push(p));
+  window.dispatchEvent(new CustomEvent("techkitch:products-updated", { detail: initial }));
+  return initial;
+}
+
+function addProduct(item) {
+  const current = loadProducts();
+  const maxId = current.reduce((max, p) => Math.max(max, Number(p.id) || 0), 0);
+  const newProduct = normalizeProduct({
+    ...item,
+    id: maxId + 1
+  });
+  current.unshift(newProduct);
+  saveStoredProducts(current);
+  return newProduct;
+}
+
+function updateProduct(id, updatedFields) {
+  const current = loadProducts();
+  const index = current.findIndex(p => Number(p.id) === Number(id));
+  if (index === -1) throw new Error("Product not found");
+  current[index] = normalizeProduct({
+    ...current[index],
+    ...updatedFields,
+    id: Number(id)
+  });
+  saveStoredProducts(current);
+  return current[index];
+}
+
+function deleteProduct(id) {
+  const current = loadProducts();
+  const filtered = current.filter(p => Number(p.id) !== Number(id));
+  saveStoredProducts(filtered);
+  return filtered;
+}
+
+function findProduct(id) {
+  return PRODUCTS.find(p => Number(p.id) === Number(id) || String(p.id) === String(id));
+}
+
+function loadStoreSettings() {
+  try {
+    const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if (raw) {
+      return { ...DEFAULT_STORE_SETTINGS, ...JSON.parse(raw) };
+    }
+  } catch (e) {
+    console.warn("Could not read settings from storage:", e);
+  }
+  return { ...DEFAULT_STORE_SETTINGS };
+}
+
+function saveStoreSettings(settings) {
+  const merged = { ...DEFAULT_STORE_SETTINGS, ...settings };
+  localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(merged));
+  Object.assign(STORE_SETTINGS, merged);
+  window.dispatchEvent(new CustomEvent("techkitch:settings-updated", { detail: merged }));
+  return merged;
+}
+
+// Global exports available to all page scripts
+var PRODUCTS = loadProducts();
+var STORE_SETTINGS = loadStoreSettings();
+
+// Export helpers to global window
+window.PRODUCTS = PRODUCTS;
+window.STORE_SETTINGS = STORE_SETTINGS;
+window.loadProducts = loadProducts;
+window.saveStoredProducts = saveStoredProducts;
+window.resetStoredProducts = resetStoredProducts;
+window.addProduct = addProduct;
+window.updateProduct = updateProduct;
+window.deleteProduct = deleteProduct;
+window.findProduct = findProduct;
+window.loadStoreSettings = loadStoreSettings;
+window.saveStoreSettings = saveStoreSettings;
+window.loadHeroSlides = loadHeroSlides;
+window.saveHeroSlides = saveHeroSlides;
+window.resetHeroSlides = resetHeroSlides;
