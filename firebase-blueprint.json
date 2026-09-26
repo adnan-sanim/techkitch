@@ -1,0 +1,81 @@
+{
+  "entities": {
+    "products": {
+      "title": "Product",
+      "description": "Products available in the TechKitch store catalog",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique product ID" },
+        "name": { "type": "string", "description": "Product title" },
+        "category": { "type": "string", "description": "Product category" },
+        "price": { "type": "number", "description": "Current selling price" },
+        "oldPrice": { "type": "number", "description": "Original regular price" },
+        "images": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Product photo URLs"
+        },
+        "description": { "type": "string", "description": "Detailed specifications" },
+        "stock": { "type": "number", "description": "Available inventory count" },
+        "badge": { "type": "string", "description": "Optional tag (e.g. Best Seller, New)" },
+        "createdAt": { "type": "string", "description": "Timestamp created" },
+        "updatedAt": { "type": "string", "description": "Timestamp last updated" }
+      },
+      "required": ["name", "price", "category"]
+    },
+    "orders": {
+      "title": "Order",
+      "description": "Customer purchase orders",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Order tracking ID" },
+        "customer": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "phone": { "type": "string" },
+            "email": { "type": "string" },
+            "address": { "type": "string" },
+            "city": { "type": "string" },
+            "zip": { "type": "string" }
+          }
+        },
+        "items": {
+          "type": "array",
+          "description": "Purchased cart items"
+        },
+        "subtotal": { "type": "number" },
+        "shipping": { "type": "number" },
+        "tax": { "type": "number" },
+        "total": { "type": "number" },
+        "status": { "type": "string", "description": "Order status (pending, completed, etc.)" },
+        "date": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["items", "total", "customer"]
+    },
+    "store_settings": {
+      "title": "Store Settings",
+      "description": "Configurable store delivery and contact settings",
+      "type": "object",
+      "properties": {
+        "shippingFee": { "type": "number" },
+        "freeShippingThreshold": { "type": "number" },
+        "supportPhone": { "type": "string" },
+        "supportEmail": { "type": "string" },
+        "facebookUrl": { "type": "string" }
+      }
+    },
+    "hero_slides": {
+      "title": "Hero Slider Images",
+      "description": "Image URLs for the frontpage hero banner slideshow",
+      "type": "object",
+      "properties": {
+        "slides": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

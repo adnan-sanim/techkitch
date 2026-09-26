@@ -54,6 +54,13 @@ function saveOrder(order) {
   const orders = raw ? JSON.parse(raw) : [];
   orders.push(order);
   localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+
+  // Persist order in Firebase Firestore
+  if (window.TechKitchDB && window.TechKitchDB.createOrderInFirestore) {
+    window.TechKitchDB.createOrderInFirestore(order).catch((err) => {
+      console.warn("Failed to create order in Firestore:", err);
+    });
+  }
 }
 
 function validateField(field, condition) {

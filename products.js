@@ -677,6 +677,11 @@ function addProduct(item) {
   });
   current.unshift(newProduct);
   saveStoredProducts(current);
+  if (window.TechKitchDB && window.TechKitchDB.saveProductToFirestore) {
+    window.TechKitchDB.saveProductToFirestore(newProduct).catch((err) => {
+      console.warn("Firestore product save warning:", err);
+    });
+  }
   return newProduct;
 }
 
@@ -690,13 +695,23 @@ function updateProduct(id, updatedFields) {
     id: Number(id)
   });
   saveStoredProducts(current);
+  if (window.TechKitchDB && window.TechKitchDB.saveProductToFirestore) {
+    window.TechKitchDB.saveProductToFirestore(current[index]).catch((err) => {
+      console.warn("Firestore product update warning:", err);
+    });
+  }
   return current[index];
 }
 
 function deleteProduct(id) {
   const current = loadProducts();
-  const filtered = current.filter(p => Number(p.id) !== Number(id));
+  const filtered = current.filter(p => Number(p.id) !== Number(id) && String(p.id) !== String(id));
   saveStoredProducts(filtered);
+  if (window.TechKitchDB && window.TechKitchDB.deleteProductFromFirestore) {
+    window.TechKitchDB.deleteProductFromFirestore(id).catch((err) => {
+      console.warn("Firestore product delete warning:", err);
+    });
+  }
   return filtered;
 }
 
@@ -721,7 +736,35 @@ function saveStoreSettings(settings) {
   localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(merged));
   Object.assign(STORE_SETTINGS, merged);
   window.dispatchEvent(new CustomEvent("techkitch:settings-updated", { detail: merged }));
+  if (window.TechKitchDB && window.TechKitchDB.saveStoreSettingsToFirestore) {
+    window.TechKitchDB.saveStoreSettingsToFirestore(merged).catch((err) => {
+      console.warn("Firestore settings save warning:", err);
+    });
+  }
   return merged;
+}
+
+// Auto-sync products with Cloud Firestore
+async function syncWithFirestore() {
+  if (window.TechKitchDB && window.TechKitchDB.syncProductsFromFirestore) {
+    try {
+      const cloudProducts = await window.TechKitchDB.syncProductsFromFirestore(DEFAULT_PRODUCTS);
+      if (cloudProducts && Array.isArray(cloudProducts) && cloudProducts.length > 0) {
+        saveStoredProducts(cloudProducts);
+      }
+    } catch (e) {
+      console.warn("Could not sync products with cloud Firestore:", e);
+    }
+  }
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("techkitch:db-ready", syncWithFirestore);
+  if (document.readyState === "complete" || document.readyState === "interactive") {
+    setTimeout(syncWithFirestore, 200);
+  } else {
+    window.addEventListener("DOMContentLoaded", () => setTimeout(syncWithFirestore, 200));
+  }
 }
 
 // Global exports available to all page scripts

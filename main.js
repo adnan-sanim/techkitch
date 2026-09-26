@@ -6,10 +6,53 @@
 let activeCategory = "All";
 let searchTerm = "";
 let sortMode = "featured";
+let chipDragDist = 0;
+let isChipDragActive = false;
 
 function getCategories() {
   const cats = new Set(PRODUCTS.map((p) => p.category));
   return ["All", ...Array.from(cats).sort()];
+}
+
+function initCategoryDragScroll() {
+  const wrap = document.querySelector(".js-categories");
+  if (!wrap || wrap.dataset.dragInit) return;
+  wrap.dataset.dragInit = "true";
+
+  let isDown = false;
+  let startX = 0;
+  let scrollLeft = 0;
+
+  wrap.addEventListener("mousedown", (e) => {
+    isDown = true;
+    chipDragDist = 0;
+    isChipDragActive = false;
+    startX = e.pageX - wrap.offsetLeft;
+    scrollLeft = wrap.scrollLeft;
+  });
+
+  window.addEventListener("mouseup", () => {
+    if (!isDown) return;
+    isDown = false;
+    wrap.classList.remove("is-dragging");
+    setTimeout(() => {
+      chipDragDist = 0;
+      isChipDragActive = false;
+    }, 60);
+  });
+
+  wrap.addEventListener("mousemove", (e) => {
+    if (!isDown) return;
+    const x = e.pageX - wrap.offsetLeft;
+    const diff = Math.abs(x - startX);
+    if (diff > 4) {
+      isChipDragActive = true;
+      chipDragDist = diff;
+      wrap.classList.add("is-dragging");
+      e.preventDefault();
+      wrap.scrollLeft = scrollLeft - (x - startX) * 1.4;
+    }
+  });
 }
 
 function renderCategoryChips() {
@@ -18,17 +61,26 @@ function renderCategoryChips() {
   wrap.innerHTML = getCategories()
     .map(
       (cat) => `
-      <button class="chip ${cat === activeCategory ? "chip--active" : ""}" data-category="${cat}">
-        ${cat}
+      <button type="button" class="chip ${cat === activeCategory ? "chip--active" : ""}" data-category="${escapeHtml(cat)}">
+        ${escapeHtml(cat)}
       </button>`
     )
     .join("");
 
+  initCategoryDragScroll();
+
   wrap.querySelectorAll(".chip").forEach((btn) => {
     btn.addEventListener("click", () => {
+      if (isChipDragActive || chipDragDist > 5) return;
       activeCategory = btn.dataset.category;
       renderCategoryChips();
       renderProducts();
+      setTimeout(() => {
+        const activeBtn = wrap.querySelector(".chip--active");
+        if (activeBtn) {
+          activeBtn.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+        }
+      }, 50);
     });
   });
 }
@@ -47,30 +99,43 @@ function getFilteredProducts() {
   return list;
 }
 
+function escapeHtml(str) {
+  if (typeof str !== "string") return str;
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 function productCard(p) {
   const outOfStock = p.stock <= 0;
   const discount = p.oldPrice ? Math.round(100 - (p.price / p.oldPrice) * 100) : null;
   const mainImage = (p.images && p.images.length > 0) ? p.images[0] : p.image;
 
   return `
-    <article class="product-card ${outOfStock ? "product-card--oos" : ""}">
-      <a href="#" class="product-card__media" data-view="${p.id}">
-        <img src="${mainImage}" alt="${p.name}" loading="lazy" />
-        ${p.badge ? `<span class="tag tag--${p.badge.toLowerCase().replace(/\s/g, "-")}">${p.badge}</span>` : ""}
+    <article class="product-card ${outOfStock ? "product-card--oos" : ""}" data-card-id="${p.id}" tabindex="0" role="button" aria-label="View details for ${escapeHtml(p.name)}">
+      <div class="product-card__media">
+        <img src="${mainImage}" alt="${escapeHtml(p.name)}" loading="lazy" />
+        ${p.badge ? `<span class="tag tag--${p.badge.toLowerCase().replace(/\s/g, "-")}">${escapeHtml(p.badge)}</span>` : ""}
+        ${discount ? `<span class="product-card__discount-badge">-${discount}%</span>` : ""}
         ${outOfStock ? `<span class="tag tag--oos">Out of stock</span>` : ""}
-      </a>
-      <div class="product-card__body">
-        <p class="product-card__category">${p.category}</p>
-        <h3 class="product-card__name"><a href="#" data-view="${p.id}">${p.name}</a></h3>
-        <div class="product-card__price-row">
-          <span class="price-tag">${formatMoney(p.price)}</span>
-          ${p.oldPrice ? `<span class="price-tag price-tag--old">${formatMoney(p.oldPrice)}</span>` : ""}
-          ${discount ? `<span class="price-tag price-tag--discount">-${discount}%</span>` : ""}
+        <div class="product-card__quick-overlay">
+          <span class="product-card__view-hint">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            View Details
+          </span>
         </div>
-        <button class="btn btn--full ${outOfStock ? "btn--disabled" : "btn--primary"}"
-          data-add="${p.id}" ${outOfStock ? "disabled" : ""}>
-          ${outOfStock ? "Out of stock" : "Add to cart"}
-        </button>
+      </div>
+      <div class="product-card__body">
+        <span class="product-card__category">${escapeHtml(p.category)}</span>
+        <h3 class="product-card__name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</h3>
+        <div class="product-card__footer">
+          <div class="product-card__price-row">
+            <span class="price-tag">${formatMoney(p.price)}</span>
+            ${p.oldPrice ? `<span class="price-tag price-tag--old">${formatMoney(p.oldPrice)}</span>` : ""}
+          </div>
+          <button type="button" class="product-card__quick-add ${outOfStock ? "btn--disabled" : ""}"
+            data-add="${p.id}" title="${outOfStock ? "Out of stock" : "Quick Add to Cart"}" ${outOfStock ? "disabled" : ""} aria-label="Add ${escapeHtml(p.name)} to cart">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+        </div>
       </div>
     </article>`;
 }
@@ -87,26 +152,43 @@ function renderProducts() {
   if (count) count.textContent = `${list.length} product${list.length === 1 ? "" : "s"}`;
   if (empty) empty.style.display = list.length === 0 ? "block" : "none";
 
-  grid.querySelectorAll("[data-add]").forEach((btn) => {
-    btn.addEventListener("click", () => addToCart(Number(btn.dataset.add)));
+  // Card click opens the large card (Boro Card)
+  grid.querySelectorAll(".product-card").forEach((card) => {
+    card.addEventListener("click", (e) => {
+      if (e.target.closest("[data-add]")) return;
+      openQuickView(Number(card.dataset.cardId));
+    });
+    card.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        if (e.target.closest("[data-add]")) return;
+        e.preventDefault();
+        openQuickView(Number(card.dataset.cardId));
+      }
+    });
   });
-  grid.querySelectorAll("[data-view]").forEach((el) => {
-    el.addEventListener("click", (e) => {
+
+  // Dedicated quick-add (+) button
+  grid.querySelectorAll("[data-add]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
       e.preventDefault();
-      openQuickView(Number(el.dataset.view));
+      addToCart(Number(btn.dataset.add));
     });
   });
 }
 
 /* ============================================================
-   UPDATED PRODUCT DETAILS & SUGGESTIONS QUICK VIEW
+   EXPANDED PRODUCT DETAILS & SUGGESTIONS (BORO CARD MODAL)
    ============================================================ */
 function openQuickView(id) {
   const p = findProduct(id);
   if (!p) return;
   const modal = document.querySelector(".js-quickview");
+  if (!modal) return;
   const outOfStock = p.stock <= 0;
   const discount = p.oldPrice ? Math.round(100 - (p.price / p.oldPrice) * 100) : null;
+  const savings = p.oldPrice ? (p.oldPrice - p.price) : 0;
+  let selectedQty = 1;
 
   const images = (p.images && p.images.length > 0) ? p.images : [p.image];
   const mainImage = images[0];
@@ -114,12 +196,12 @@ function openQuickView(id) {
   let galleryThumbnailsHTML = "";
   if (images.length > 1) {
     galleryThumbnailsHTML = `
-      <div class="qv-thumbnails" style="display: flex; gap: 8px; margin-top: 12px; justify-content: center; flex-wrap: wrap;">
+      <div class="qv-thumbnails">
         ${images
           .map(
             (imgSrc, index) => `
-          <button type="button" class="qv-thumb-btn ${index === 0 ? "active" : ""}" data-img="${imgSrc}" style="border: ${index === 0 ? "2px solid var(--teal)" : "1px solid var(--line)"}; background: #fff; padding: 2px; border-radius: var(--radius-sm); cursor: pointer; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;">
-            <img src="${imgSrc}" alt="${p.name}" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px;" />
+          <button type="button" class="qv-thumb-btn ${index === 0 ? "active" : ""}" data-img="${imgSrc}" aria-label="Photo ${index + 1}">
+            <img src="${imgSrc}" alt="${escapeHtml(p.name)} thumbnail" />
           </button>
         `
           )
@@ -129,30 +211,34 @@ function openQuickView(id) {
   }
 
   const relatedProducts = PRODUCTS.filter(
-    (item) => item.category === p.category && item.id !== p.id
+    (item) => item.category === p.category && String(item.id) !== String(p.id)
   );
 
   let relatedHTML = "";
   if (relatedProducts.length > 0) {
     relatedHTML = `
-      <div style="grid-column: 1 / -1; padding: 20px; border-top: 1px dashed var(--line); background: var(--surface);">
-        <h3 style="margin-bottom: 14px; font-size: 1.15rem; color: var(--navy);">Frequently Bought Together</h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px;">
+      <div class="qv-related-section">
+        <h4 class="qv-related-title">You Might Also Need (Accessories & Related)</h4>
+        <div class="qv-related-grid">
           ${relatedProducts
             .slice(0, 4)
             .map(
-              (item) => `
-            <div style="background: var(--surface-2); border-radius: var(--radius-md); padding: 10px; border: 1px solid var(--line); display: flex; flex-direction: column; justify-content: space-between;">
-              <a href="#" data-view="${item.id}" class="js-related-item" style="display: block; text-align: center;">
-                <img src="${item.images && item.images.length > 0 ? item.images[0] : item.image}" alt="${item.name}" style="width: 100%; height: 90px; object-fit: contain; border-radius: var(--radius-sm); margin-bottom: 8px; background: #fff;" />
-                <h4 style="font-size: 0.82rem; margin: 0 0 4px; color: var(--navy); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.2;">${item.name}</h4>
-                <p style="font-family: var(--font-mono); font-weight: 700; font-size: 0.85rem; color: var(--navy); margin: 0 0 8px;">${formatMoney(item.price)}</p>
-              </a>
-              <button class="btn btn--primary btn--sm" data-add="${item.id}" style="width: 100%; font-size: 0.75rem; padding: 6px 8px;">
-                Add
-              </button>
-            </div>
-          `
+              (item) => {
+                const itemImg = (item.images && item.images.length > 0) ? item.images[0] : item.image;
+                return `
+                <div class="qv-related-card" data-rel-id="${item.id}">
+                  <img src="${itemImg}" alt="${escapeHtml(item.name)}" loading="lazy" />
+                  <div class="qv-related-info">
+                    <h5>${escapeHtml(item.name)}</h5>
+                    <p class="qv-related-price">${formatMoney(item.price)}</p>
+                  </div>
+                  <button type="button" class="btn-related-add" data-add="${item.id}" title="Quick Add">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Add
+                  </button>
+                </div>
+              `;
+              }
             )
             .join("")}
         </div>
@@ -161,85 +247,142 @@ function openQuickView(id) {
   }
 
   modal.querySelector(".js-qv-content").innerHTML = `
-    <div style="padding: 20px; background: var(--surface-2); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
-      <img src="${mainImage}" alt="${p.name}" class="quickview__img js-qv-main-img" style="max-height: 280px; border-radius: var(--radius-md); object-fit: contain;" />
-      ${p.badge ? `<span class="tag tag--new" style="top: 16px; left: 16px;">${p.badge}</span>` : ""}
+    <div class="qv-gallery-col">
+      <div class="qv-main-image-wrap">
+        <img src="${mainImage}" alt="${escapeHtml(p.name)}" class="qv-main-image js-qv-main-img" />
+        ${p.badge ? `<span class="tag tag--new qv-badge">${escapeHtml(p.badge)}</span>` : ""}
+        ${discount ? `<span class="qv-discount-pill">SAVE ${formatMoney(savings)} (-${discount}%)</span>` : ""}
+      </div>
       ${galleryThumbnailsHTML}
     </div>
 
-    <div class="quickview__info">
-      <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap;">
-        <span class="tag tag--new" style="position: static;">${p.badge || "NEW ARRIVAL"}</span>
+    <div class="qv-details-col">
+      <div class="qv-header-row">
+        <span class="qv-category">${escapeHtml(p.category)}</span>
+        <span class="qv-stock-status ${outOfStock ? "qv-stock--oos" : "qv-stock--in"}">
+          <span class="qv-stock-dot"></span>
+          ${outOfStock ? "Out of Stock" : `In Stock (${p.stock} available)`}
+        </span>
       </div>
 
-      <h2 style="font-size: 1.35rem; margin-bottom: 4px;">${p.name}</h2>
-      <p class="product-card__category" style="margin-bottom: 12px;">${p.category}</p>
+      <h2 class="qv-title">${escapeHtml(p.name)}</h2>
 
-      <div class="product-card__price-row" style="margin-bottom: 16px;">
-        ${p.oldPrice ? `<span class="price-tag price-tag--old">${formatMoney(p.oldPrice)}</span>` : ""}
-        ${discount ? `<span class="price-tag price-tag--discount">-${discount}% OFF</span>` : ""}
-        <span class="price-tag price-tag--lg" style="color: var(--teal-dark);">${formatMoney(p.price)}</span>
+      <div class="qv-price-block">
+        <div class="qv-price-main">${formatMoney(p.price)}</div>
+        ${p.oldPrice ? `<div class="qv-price-old">${formatMoney(p.oldPrice)}</div>` : ""}
+        ${discount ? `<span class="qv-discount-tag">-${discount}% OFF</span>` : ""}
       </div>
 
-      <div style="background: var(--surface-2); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--line); margin-bottom: 16px;">
-        <h4 style="font-size: 0.92rem; margin-bottom: 6px;">Product Overview & Specifications</h4>
-        <p class="quickview__desc" style="font-size: 0.85rem; margin: 0 0 12px; line-height: 1.5; white-space: pre-line;">${p.description}</p>
-
-        <table style="width: 100%; font-size: 0.78rem; border-collapse: collapse; font-family: var(--font-mono);">
-          <tr style="border-bottom: 1px solid var(--line);">
-            <td style="padding: 6px 0; color: var(--muted); font-weight: 600; vertical-align: top;">WARRANTY</td>
-            <td style="padding: 6px 0; text-align: right; font-weight: 600; color: var(--teal-dark); line-height: 1.4;">
-              7 Days Replacement Warranty<br>(Unboxing Video Needed)
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 6px 0; color: var(--muted); font-weight: 600;">AVAILABILITY</td>
-            <td style="padding: 6px 0; text-align: right; font-weight: 600; color: ${outOfStock ? 'var(--coral)' : 'var(--success)'};">
-              ${outOfStock ? "Out of stock" : `${p.stock} In Stock`}
-            </td>
-          </tr>
-        </table>
+      <div class="qv-overview-box">
+        <h4 class="qv-overview-heading">Product Overview & Features</h4>
+        <div class="qv-desc-text">${p.description}</div>
       </div>
 
-      <button class="btn ${outOfStock ? "btn--disabled" : "btn--primary"} btn--full" data-qv-add="${p.id}" ${outOfStock ? "disabled" : ""}>
-        ${outOfStock ? "Out of stock" : "Add to cart"}
-      </button>
+      <!-- Trust Badges -->
+      <div class="qv-trust-pills">
+        <div class="qv-trust-item">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff5500" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span>7 Days Warranty</span>
+        </div>
+        <div class="qv-trust-item">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+          <span>Fast Delivery</span>
+        </div>
+        <div class="qv-trust-item">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          <span>Cash on Delivery</span>
+        </div>
+      </div>
+
+      <!-- Purchasing Controls -->
+      <div class="qv-actions-box">
+        <div class="qv-qty-selector">
+          <button type="button" class="qv-qty-btn js-qv-qty-minus" aria-label="Decrease quantity" ${outOfStock ? "disabled" : ""}>−</button>
+          <span class="qv-qty-val js-qv-qty-val">1</span>
+          <button type="button" class="qv-qty-btn js-qv-qty-plus" aria-label="Increase quantity" ${outOfStock ? "disabled" : ""}>+</button>
+        </div>
+
+        <button type="button" class="btn btn--primary qv-btn-cart js-qv-add-btn ${outOfStock ? "btn--disabled" : ""}" ${outOfStock ? "disabled" : ""}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          ${outOfStock ? "Out of Stock" : "Add to Cart"}
+        </button>
+
+        <button type="button" class="btn btn--buy-now js-qv-buy-btn ${outOfStock ? "btn--disabled" : ""}" ${outOfStock ? "disabled" : ""}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Buy Now
+        </button>
+      </div>
     </div>
 
     ${relatedHTML}
   `;
 
+  // Gallery Thumbnails listener
   const mainImgEl = modal.querySelector(".js-qv-main-img");
   modal.querySelectorAll(".qv-thumb-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
-      modal.querySelectorAll(".qv-thumb-btn").forEach((b) => {
-        b.style.border = "1px solid var(--line)";
-        b.classList.remove("active");
-      });
-      btn.style.border = "2px solid var(--teal)";
+      modal.querySelectorAll(".qv-thumb-btn").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       if (mainImgEl) {
-        mainImgEl.src = btn.dataset.img;
+        mainImgEl.style.opacity = "0.5";
+        setTimeout(() => {
+          mainImgEl.src = btn.dataset.img;
+          mainImgEl.style.opacity = "1";
+        }, 80);
       }
     });
   });
 
-  modal.querySelector("[data-qv-add]")?.addEventListener("click", () => {
-    addToCart(p.id);
+  // Quantity stepper
+  const qtyValEl = modal.querySelector(".js-qv-qty-val");
+  const minusBtn = modal.querySelector(".js-qv-qty-minus");
+  const plusBtn = modal.querySelector(".js-qv-qty-plus");
+
+  minusBtn?.addEventListener("click", () => {
+    if (selectedQty > 1) {
+      selectedQty--;
+      if (qtyValEl) qtyValEl.textContent = selectedQty;
+    }
+  });
+
+  plusBtn?.addEventListener("click", () => {
+    if (selectedQty < p.stock) {
+      selectedQty++;
+      if (qtyValEl) qtyValEl.textContent = selectedQty;
+    } else {
+      showToast(`Only ${p.stock} units available in stock.`, "info");
+    }
+  });
+
+  // Add to cart listener
+  modal.querySelector(".js-qv-add-btn")?.addEventListener("click", () => {
+    if (outOfStock) return;
+    addToCart(p.id, selectedQty);
     closeQuickView();
   });
 
-  modal.querySelectorAll("[data-add]").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      addToCart(Number(btn.dataset.add));
+  // Buy now listener (Adds to cart & opens drawer)
+  modal.querySelector(".js-qv-buy-btn")?.addEventListener("click", () => {
+    if (outOfStock) return;
+    addToCart(p.id, selectedQty);
+    closeQuickView();
+    if (typeof openDrawer === "function") {
+      setTimeout(() => openDrawer(), 150);
+    }
+  });
+
+  // Related items listener
+  modal.querySelectorAll(".qv-related-card").forEach((card) => {
+    card.addEventListener("click", (e) => {
+      if (e.target.closest("[data-add]")) return;
+      openQuickView(Number(card.dataset.relId));
     });
   });
 
-  modal.querySelectorAll(".js-related-item").forEach((link) => {
-    link.addEventListener("click", (e) => {
-      e.preventDefault();
-      openQuickView(Number(link.dataset.view));
+  modal.querySelectorAll(".btn-related-add").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      addToCart(Number(btn.dataset.add));
     });
   });
 
@@ -271,6 +414,9 @@ function initShopControls() {
 
   document.querySelector(".js-quickview .js-modal-close")?.addEventListener("click", closeQuickView);
   document.querySelector(".js-quickview .modal__backdrop")?.addEventListener("click", closeQuickView);
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeQuickView();
+  });
 }
 
 function initMobileNav() {

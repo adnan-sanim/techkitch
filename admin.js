@@ -22,6 +22,8 @@
   };
 
   const ORDERS_KEY = "techkitch_orders_v1";
+  const ADMIN_PASSWORD = "bjo17206";
+  const AUTH_STORAGE_KEY = "techkitch_admin_session_auth";
 
   // DOM Elements
   const tabs = document.querySelectorAll(".tab-btn");
@@ -30,11 +32,161 @@
   const invoiceModal = document.getElementById("invoiceModal");
   const toastContainer = document.getElementById("adminToastContainer");
 
+  // Auth Elements
+  const adminLoginScreen = document.getElementById("adminLoginScreen");
+  const adminMainContainer = document.getElementById("adminMainContainer");
+  const adminLoginForm = document.getElementById("adminLoginForm");
+  const adminPasswordInput = document.getElementById("adminPasswordInput");
+  const btnTogglePassword = document.getElementById("btnTogglePassword");
+  const iconEyeOpen = document.getElementById("iconEyeOpen");
+  const iconEyeClosed = document.getElementById("iconEyeClosed");
+  const adminLoginError = document.getElementById("adminLoginError");
+  const btnOpenAddProduct = document.getElementById("btnOpenAddProduct");
+  const btnLogoutAdmin = document.getElementById("btnLogoutAdmin");
+
+  // Deletion State (Replaces blocked window.confirm)
+  let pendingDelete = null; // { type: 'product' | 'order', id: string|number }
+
+  function openDeleteConfirmModal(id, type = "product") {
+    pendingDelete = { id, type };
+    const modal = document.getElementById("deleteConfirmModal");
+    const titleEl = document.getElementById("deleteModalTitle");
+    const descEl = document.getElementById("deleteModalDesc");
+
+    if (type === "product") {
+      const p = state.products.find(item => Number(item.id) === Number(id) || String(item.id) === String(id));
+      const pName = p ? p.name : `Product #${id}`;
+      if (titleEl) titleEl.textContent = "Delete Product";
+      if (descEl) {
+        descEl.innerHTML = `Are you sure you want to permanently delete <strong>"${escapeHtml(pName)}"</strong> (ID: #${id}) from your store catalog?`;
+      }
+    } else if (type === "order") {
+      if (titleEl) titleEl.textContent = "Delete Customer Order";
+      if (descEl) {
+        descEl.innerHTML = `Are you sure you want to delete order <strong>#${escapeHtml(id)}</strong>? This record will be permanently removed.`;
+      }
+    }
+
+    if (modal) {
+      modal.classList.add("admin-modal--open");
+    } else {
+      executePendingDelete();
+    }
+  }
+
+  function closeDeleteConfirmModal() {
+    const modal = document.getElementById("deleteConfirmModal");
+    if (modal) modal.classList.remove("admin-modal--open");
+    pendingDelete = null;
+  }
+
+  function executePendingDelete() {
+    if (!pendingDelete) return;
+    const { id, type } = pendingDelete;
+    if (type === "product") {
+      window.deleteProduct(id);
+      loadData();
+      renderAll();
+      showToast("Product deleted successfully.", "success");
+    } else if (type === "order") {
+      state.orders = state.orders.filter(o => String(o.id) !== String(id));
+      saveOrders();
+      renderOrdersTable();
+      showToast(`Order #${id} deleted.`);
+      if (window.TechKitchDB && window.TechKitchDB.deleteOrderFromFirestore) {
+        window.TechKitchDB.deleteOrderFromFirestore(id).catch(console.warn);
+      }
+    }
+    closeDeleteConfirmModal();
+  }
+
   // Initialize
   function init() {
-    loadData();
+    bindAuthEvents();
     bindEvents();
-    renderAll();
+    updateAuthUI();
+  }
+
+  function isAuthenticated() {
+    return sessionStorage.getItem(AUTH_STORAGE_KEY) === ADMIN_PASSWORD || 
+           localStorage.getItem(AUTH_STORAGE_KEY) === ADMIN_PASSWORD;
+  }
+
+  function setAuthenticated() {
+    sessionStorage.setItem(AUTH_STORAGE_KEY, ADMIN_PASSWORD);
+    localStorage.setItem(AUTH_STORAGE_KEY, ADMIN_PASSWORD);
+  }
+
+  function clearAuthentication() {
+    sessionStorage.removeItem(AUTH_STORAGE_KEY);
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+  }
+
+  function updateAuthUI() {
+    const authed = isAuthenticated();
+    if (authed) {
+      if (adminLoginScreen) adminLoginScreen.style.display = "none";
+      if (adminMainContainer) adminMainContainer.style.display = "block";
+      if (btnOpenAddProduct) btnOpenAddProduct.style.display = "inline-flex";
+      if (btnLogoutAdmin) btnLogoutAdmin.style.display = "inline-flex";
+      loadData();
+      renderAll();
+      if (state.activeTab === "hero") {
+        renderHeroManager();
+      }
+    } else {
+      if (adminLoginScreen) adminLoginScreen.style.display = "flex";
+      if (adminMainContainer) adminMainContainer.style.display = "none";
+      if (btnOpenAddProduct) btnOpenAddProduct.style.display = "none";
+      if (btnLogoutAdmin) btnLogoutAdmin.style.display = "none";
+      if (adminPasswordInput) {
+        adminPasswordInput.value = "";
+        setTimeout(() => adminPasswordInput.focus(), 80);
+      }
+      if (adminLoginError) adminLoginError.style.display = "none";
+    }
+  }
+
+  function bindAuthEvents() {
+    if (adminLoginForm) {
+      adminLoginForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        handleLogin();
+      });
+    }
+
+    if (btnTogglePassword && adminPasswordInput) {
+      btnTogglePassword.addEventListener("click", () => {
+        const isPwd = adminPasswordInput.type === "password";
+        adminPasswordInput.type = isPwd ? "text" : "password";
+        if (iconEyeOpen) iconEyeOpen.style.display = isPwd ? "none" : "block";
+        if (iconEyeClosed) iconEyeClosed.style.display = isPwd ? "block" : "none";
+      });
+    }
+
+    if (btnLogoutAdmin) {
+      btnLogoutAdmin.addEventListener("click", () => {
+        clearAuthentication();
+        showToast("Logged out of Admin Portal", "info");
+        updateAuthUI();
+      });
+    }
+  }
+
+  function handleLogin() {
+    if (!adminPasswordInput) return;
+    const entered = adminPasswordInput.value.trim();
+    if (entered === ADMIN_PASSWORD) {
+      setAuthenticated();
+      if (adminLoginError) adminLoginError.style.display = "none";
+      showToast("Access Granted. Welcome to Admin Portal!", "success");
+      updateAuthUI();
+    } else {
+      if (adminLoginError) {
+        adminLoginError.style.display = "flex";
+      }
+      adminPasswordInput.select();
+    }
   }
 
   function loadData() {
@@ -49,6 +201,80 @@
     } catch (e) {
       console.error("Failed to read orders:", e);
       state.orders = [];
+    }
+
+    // Sync with Firestore Cloud Database
+    if (window.TechKitchDB) {
+      updateFirebaseStatusUI();
+      if (window.TechKitchDB.getOrdersFromFirestore) {
+        window.TechKitchDB.getOrdersFromFirestore().then((cloudOrders) => {
+          if (cloudOrders && cloudOrders.length > 0) {
+            const mergedMap = new Map();
+            cloudOrders.forEach(o => mergedMap.set(String(o.id), o));
+            state.orders.forEach(o => {
+              if (!mergedMap.has(String(o.id))) mergedMap.set(String(o.id), o);
+            });
+            state.orders = Array.from(mergedMap.values());
+            state.orders.sort((a, b) => new Date(b.date || b.createdAt || 0) - new Date(a.date || a.createdAt || 0));
+            try {
+              localStorage.setItem(ORDERS_KEY, JSON.stringify(state.orders));
+            } catch (e) {}
+            renderOrdersTable();
+            renderKPIs();
+          }
+        }).catch(console.warn);
+      }
+
+      if (window.TechKitchDB.subscribeToOrders) {
+        window.TechKitchDB.subscribeToOrders((cloudOrders) => {
+          if (cloudOrders && Array.isArray(cloudOrders) && cloudOrders.length > 0) {
+            state.orders = cloudOrders;
+            try {
+              localStorage.setItem(ORDERS_KEY, JSON.stringify(state.orders));
+            } catch (e) {}
+            renderOrdersTable();
+            renderKPIs();
+          }
+        });
+      }
+    }
+  }
+
+  async function updateFirebaseStatusUI() {
+    if (!window.TechKitchDB) return;
+    const badge = document.getElementById("firebaseStatusBadge");
+    const projEl = document.getElementById("fbActiveProjectId");
+    const noticeEl = document.getElementById("fbRulesNotice");
+    const config = window.TechKitchDB.getActiveConfig ? window.TechKitchDB.getActiveConfig() : null;
+    if (projEl && config) {
+      projEl.textContent = config.projectId;
+    }
+
+    if (window.TechKitchDB.testFirestorePermissions) {
+      const res = await window.TechKitchDB.testFirestorePermissions();
+      if (res.ok) {
+        if (badge) {
+          badge.style.background = "rgba(16, 185, 129, 0.15)";
+          badge.style.color = "#10b981";
+          badge.style.borderColor = "rgba(16, 185, 129, 0.3)";
+          badge.innerHTML = `<span style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; display: inline-block;"></span> Firestore Online & Ready ✓`;
+        }
+        if (noticeEl) {
+          noticeEl.style.display = "none";
+        }
+      } else {
+        if (badge) {
+          badge.style.background = "rgba(245, 158, 11, 0.15)";
+          badge.style.color = "#f59e0b";
+          badge.style.borderColor = "rgba(245, 158, 11, 0.3)";
+          badge.innerHTML = `<span style="width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span> Rules Setup Needed`;
+        }
+        if (noticeEl) {
+          noticeEl.style.display = "block";
+        }
+      }
+    } else if (badge) {
+      badge.innerHTML = `<span style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; display: inline-block;"></span> Firestore Connected`;
     }
   }
 
@@ -696,6 +922,9 @@
     saveOrders();
     renderOrdersTable();
     showToast(`Sample order ${newOrder.id} generated!`);
+    if (window.TechKitchDB && window.TechKitchDB.createOrderInFirestore) {
+      window.TechKitchDB.createOrderInFirestore(newOrder).catch(console.warn);
+    }
   }
 
   // Event Listeners
@@ -872,12 +1101,12 @@
         const btn = e.target.closest("[data-action]");
         if (!btn) return;
         const action = btn.dataset.action;
-        const id = Number(btn.dataset.id);
+        const id = btn.dataset.id;
 
         if (action === "edit") {
           openProductModal(id);
         } else if (action === "duplicate") {
-          const original = state.products.find(p => Number(p.id) === id);
+          const original = state.products.find(p => Number(p.id) === Number(id) || String(p.id) === String(id));
           if (original) {
             const copy = { ...original, name: `${original.name} (Copy)` };
             delete copy.id;
@@ -887,14 +1116,9 @@
             showToast("Product duplicated successfully!");
           }
         } else if (action === "delete") {
-          if (confirm("Are you sure you want to delete this product?")) {
-            window.deleteProduct(id);
-            loadData();
-            renderAll();
-            showToast("Product deleted.");
-          }
+          openDeleteConfirmModal(id, "product");
         } else if (action === "toggle-stock") {
-          const p = state.products.find(item => Number(item.id) === id);
+          const p = state.products.find(item => Number(item.id) === Number(id) || String(item.id) === String(id));
           if (p) {
             const newStock = p.stock > 0 ? 0 : 15;
             window.updateProduct(id, { stock: newStock });
@@ -904,6 +1128,16 @@
           }
         }
       });
+    }
+
+    // Delete Confirmation Modal button listeners
+    document.querySelectorAll(".js-close-delete-modal").forEach(btn => {
+      btn.addEventListener("click", closeDeleteConfirmModal);
+    });
+
+    const btnConfirmDelete = document.getElementById("btnConfirmDelete");
+    if (btnConfirmDelete) {
+      btnConfirmDelete.addEventListener("click", executePendingDelete);
     }
 
     // ============================================================
@@ -1056,12 +1290,10 @@
     const btnResetHero = document.getElementById("btnResetHeroSlides");
     if (btnResetHero) {
       btnResetHero.addEventListener("click", () => {
-        if (confirm("Reset the hero slider images back to original default tech gear?")) {
-          state.heroSlides = window.resetHeroSlides();
-          renderHeroManager();
-          renderKPIs();
-          showToast("Hero slider restored to default products!");
-        }
+        state.heroSlides = window.resetHeroSlides();
+        renderHeroManager();
+        renderKPIs();
+        showToast("Hero slider restored to default products!");
       });
     }
 
@@ -1102,12 +1334,7 @@
         if (action === "view-order") {
           openInvoiceModal(id);
         } else if (action === "delete-order") {
-          if (confirm(`Delete order ${id}?`)) {
-            state.orders = state.orders.filter(o => o.id !== id);
-            saveOrders();
-            renderOrdersTable();
-            showToast(`Order ${id} deleted.`);
-          }
+          openDeleteConfirmModal(id, "order");
         }
       });
 
@@ -1121,7 +1348,120 @@
             saveOrders();
             renderOrdersTable();
             showToast(`Order ${orderId} marked as ${newStatus}`);
+            if (window.TechKitchDB && window.TechKitchDB.updateOrderInFirestore) {
+              window.TechKitchDB.updateOrderInFirestore(orderId, { status: newStatus }).catch(console.warn);
+            }
           }
+        }
+      });
+    }
+
+    // Copy Firebase rules button
+    const btnCopyRules = document.getElementById("btnCopyFbRules");
+    if (btnCopyRules) {
+      btnCopyRules.addEventListener("click", () => {
+        const rulesText = `rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      allow read, write: if true;\n    }\n  }\n}`;
+        navigator.clipboard.writeText(rulesText).then(() => {
+          btnCopyRules.textContent = "Copied! ✓";
+          showToast("Rules copied to clipboard! Paste them into your Firebase console Rules tab.", "success");
+          setTimeout(() => { btnCopyRules.textContent = "Copy Rules"; }, 2500);
+        }).catch(() => {
+          showToast("Could not copy automatically. Please copy the code box manually.", "danger");
+        });
+      });
+    }
+
+    // Push all products and data to Firebase
+    const btnSeedAll = document.getElementById("btnSeedAllToFirebase");
+    const progressEl = document.getElementById("fbUploadProgress");
+    if (btnSeedAll) {
+      btnSeedAll.addEventListener("click", async () => {
+        btnSeedAll.disabled = true;
+        btnSeedAll.innerHTML = `<span>⏳</span> Uploading to Firestore...`;
+        if (progressEl) {
+          progressEl.style.display = "block";
+          progressEl.textContent = "Testing connection and permissions to techkitch-5a987...";
+        }
+
+        try {
+          if (!window.TechKitchDB) {
+            throw new Error("Firebase module is loading. Please try again in 2 seconds.");
+          }
+
+          const permTest = await window.TechKitchDB.testFirestorePermissions();
+          if (!permTest.ok && permTest.isPermissionDenied) {
+            if (progressEl) {
+              progressEl.style.color = "#ef4444";
+              progressEl.textContent = "❌ Permission Denied: Please open the Rules tab in Firebase, paste the rules above, click Publish, then try again.";
+            }
+            showToast("Permission Denied: Go to Firebase Console > Rules tab, set allow read, write: if true; and Publish.", "danger", 6000);
+            updateFirebaseStatusUI();
+            return;
+          }
+
+          if (progressEl) {
+            progressEl.style.color = "#34d399";
+            progressEl.textContent = `Uploading ${state.products.length} products, store settings, and sample orders to Firebase...`;
+          }
+
+          const res = await window.TechKitchDB.seedAllDataToFirestore(
+            state.products,
+            state.orders,
+            window.STORE_SETTINGS,
+            window.HERO_SLIDES
+          );
+
+          if (progressEl) {
+            progressEl.style.color = "#10b981";
+            progressEl.textContent = `🎉 Success! Uploaded ${res.productsUploaded} products and ${res.ordersUploaded} orders to Firebase Firestore!`;
+          }
+
+          showToast(`🎉 Upload complete! ${res.productsUploaded} products uploaded to Firebase. Refresh your Firebase Console!`, "success", 5000);
+          updateFirebaseStatusUI();
+        } catch (err) {
+          console.error("Seed error:", err);
+          if (progressEl) {
+            progressEl.style.color = "#ef4444";
+            progressEl.textContent = `❌ Error: ${err.message}`;
+          }
+          showToast(`Upload error: ${err.message}`, "danger");
+        } finally {
+          btnSeedAll.disabled = false;
+          btnSeedAll.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> 🚀 Push All Products & Data to Firebase Now`;
+        }
+      });
+    }
+
+    // Cloud Database manual sync button
+    const btnSyncFB = document.getElementById("btnSyncFirebaseNow");
+    if (btnSyncFB) {
+      btnSyncFB.addEventListener("click", async () => {
+        btnSyncFB.disabled = true;
+        btnSyncFB.innerHTML = `<span>⏳</span> Syncing...`;
+        try {
+          if (window.TechKitchDB) {
+            await updateFirebaseStatusUI();
+            const synced = await window.TechKitchDB.syncProductsFromFirestore(state.products);
+            if (synced && synced.length > 0) {
+              state.products = synced;
+              window.saveStoredProducts(synced);
+            }
+            const cloudOrders = await window.TechKitchDB.getOrdersFromFirestore();
+            if (cloudOrders && cloudOrders.length > 0) {
+              state.orders = cloudOrders;
+              saveOrders();
+            }
+            renderAll();
+            showToast("Cloud Firestore sync check completed!", "success");
+          } else {
+            showToast("Database connected.", "success");
+          }
+        } catch (err) {
+          console.error("Sync error:", err);
+          showToast("Sync error: " + err.message, "danger");
+        } finally {
+          btnSyncFB.disabled = false;
+          btnSyncFB.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Check & Sync`;
         }
       });
     }
